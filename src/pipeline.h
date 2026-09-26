@@ -20,6 +20,7 @@
 #ifndef PIPELINE_H
 #define PIPELINE_H
 
+#include "background.h"
 #include "framer.h"
 
 #include <QMutex>
@@ -45,6 +46,10 @@ public:
     void setZoom(Framer::Zoom zoom) { m_zoom = zoom; }
     // "" picks the first real camera
     void setSource(const QString &device);
+    void setBlur(bool on) { m_blur = on; }
+    void setBlurStrength(Background::Strength strength) { m_blurStrength = strength; }
+    // Shown behind the people instead of the blur; "" for none
+    void setBackgroundImage(const QString &path);
 
     void stop() { m_stop = true; }
 
@@ -66,8 +71,12 @@ private:
     std::atomic<Framer::Zoom> m_zoom = Framer::Medium;
     std::atomic<bool> m_stop = false;
     std::atomic<bool> m_sourceChanged = false;
+    std::atomic<bool> m_blur = false;
+    std::atomic<Background::Strength> m_blurStrength = Background::Strong;
+    std::atomic<bool> m_imageChanged = false;
     mutable QMutex m_mutex;
     QString m_source;
+    QString m_image;
 };
 
 #endif // PIPELINE_H

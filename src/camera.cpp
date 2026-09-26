@@ -24,6 +24,7 @@
 
 namespace {
 const QStringList Zooms = {"wide", "medium", "close"};
+const QStringList Strengths = {"light", "strong"};
 }
 
 Camera::Camera(QObject *parent)
@@ -61,6 +62,9 @@ void Camera::apply()
     m_pipeline->setFraming(framing());
     m_pipeline->setZoom(Framer::Zoom(std::max<qsizetype>(0, Zooms.indexOf(zoom()))));
     m_pipeline->setSource(source());
+    m_pipeline->setBlur(backgroundBlur());
+    m_pipeline->setBlurStrength(Background::Strength(Strengths.indexOf(blurStrength())));
+    m_pipeline->setBackgroundImage(backgroundImage());
 }
 
 bool Camera::framing() const
@@ -98,6 +102,45 @@ QString Camera::source() const
 void Camera::setSource(const QString &device)
 {
     m_settings.setValue("Source", device);
+    apply();
+    emit Changed();
+}
+
+bool Camera::backgroundBlur() const
+{
+    return m_settings.value("BackgroundBlur", false).toBool();
+}
+
+void Camera::setBackgroundBlur(bool on)
+{
+    m_settings.setValue("BackgroundBlur", on);
+    apply();
+    emit Changed();
+}
+
+QString Camera::blurStrength() const
+{
+    const QString value = m_settings.value("BlurStrength", "strong").toString();
+    return Strengths.contains(value) ? value : "strong";
+}
+
+void Camera::setBlurStrength(const QString &strength)
+{
+    if (!Strengths.contains(strength))
+        return;
+    m_settings.setValue("BlurStrength", strength);
+    apply();
+    emit Changed();
+}
+
+QString Camera::backgroundImage() const
+{
+    return m_settings.value("BackgroundImage").toString();
+}
+
+void Camera::setBackgroundImage(const QString &path)
+{
+    m_settings.setValue("BackgroundImage", path);
     apply();
     emit Changed();
 }

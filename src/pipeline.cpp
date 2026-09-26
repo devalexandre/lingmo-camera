@@ -38,6 +38,9 @@
 #ifndef MODEL_PATH
 #define MODEL_PATH "/usr/share/lingmo-camera/face_detection_yunet_2023mar.onnx"
 #endif
+#ifndef SEGMENTATION_MODEL_PATH
+#define SEGMENTATION_MODEL_PATH "/usr/share/lingmo-camera/human_segmentation_pphumanseg_2023mar.onnx"
+#endif
 
 Pipeline::Pipeline(QObject *parent)
     : QThread(parent)
@@ -50,6 +53,15 @@ void Pipeline::setSource(const QString &device)
     if (m_source != device) {
         m_source = device;
         m_sourceChanged = true;
+    }
+}
+
+void Pipeline::setBackgroundImage(const QString &path)
+{
+    QMutexLocker lock(&m_mutex);
+    if (m_image != path) {
+        m_image = path;
+        m_imageChanged = true;
     }
 }
 
@@ -102,6 +114,10 @@ void Pipeline::run()
     Framer framer(MODEL_PATH);
     if (!framer.isValid())
         qWarning() << "face model not loaded from" << MODEL_PATH << "- showing the whole picture";
+    Background background(SEGMENTATION_MODEL_PATH);
+    if (!background.isValid())
+        qWarning() << "segmentation model not loaded from" << SEGMENTATION_MODEL_PATH << "- no background blur";
+    bool blurring = false;
 
     cv::VideoCapture camera;
     QString cameraDevice;
@@ -163,6 +179,7 @@ void Pipeline::run()
             camera.set(cv::CAP_PROP_FPS, 30);
             camera.set(cv::CAP_PROP_BUFFERSIZE, 1);
             framer.reset();
+            background.reset();
             for (const auto &c : cameras()) {
                 if (c.first == cameraDevice)
                     emit sourceNameChanged(c.second);
@@ -186,6 +203,18 @@ void Pipeline::run()
                              & cv::Rect(0, 0, frame.cols, frame.rows);
         cv::resize(frame(roi), scaled, outSize, 0, 0,
                    roi.width > outSize.width ? cv::INTER_AREA : cv::INTER_LINEAR);
+
+        // After the crop, so the mask matches what the apps get
+        if (m_imageChanged.exchange(false)) {
+            QMutexLocker lock(&m_mutex);
+            background.setImage(QFile::encodeName(m_image).toStdString());
+        }
+        if (m_blur) {
+            background.apply(scaled, m_blurStrength);
+        } else if (blurring) {
+            background.reset();
+        }
+        blurring = m_blur;
         out.write(scaled);
     }
 

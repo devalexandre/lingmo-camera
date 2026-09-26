@@ -35,6 +35,9 @@ class Camera : public QObject
     Q_PROPERTY(bool Framing READ framing WRITE setFraming)
     Q_PROPERTY(QString Zoom READ zoom WRITE setZoom)
     Q_PROPERTY(QString Source READ source WRITE setSource)
+    Q_PROPERTY(bool BackgroundBlur READ backgroundBlur WRITE setBackgroundBlur)
+    Q_PROPERTY(QString BlurStrength READ blurStrength WRITE setBlurStrength)
+    Q_PROPERTY(QString BackgroundImage READ backgroundImage WRITE setBackgroundImage)
     Q_PROPERTY(bool Available READ available)
     Q_PROPERTY(bool Active READ active)
     Q_PROPERTY(QString SourceName READ sourceName)
@@ -51,6 +54,14 @@ public:
     // Device of the real camera, "" for the first one
     QString source() const;
     void setSource(const QString &device);
+    bool backgroundBlur() const;
+    void setBackgroundBlur(bool on);
+    // "light" or "strong"
+    QString blurStrength() const;
+    void setBlurStrength(const QString &strength);
+    // Image shown behind the people instead of the blur, "" for none
+    QString backgroundImage() const;
+    void setBackgroundImage(const QString &path);
 
     // The virtual camera exists (the v4l2loopback module is loaded)
     bool available() const { return m_available; }
