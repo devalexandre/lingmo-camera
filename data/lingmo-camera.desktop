@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Lingmo Camera
+Name[pt_BR]=Câmera do Lingmo
+Comment=Auto framing for video calls
+Comment[pt_BR]=Enquadramento automático para chamadas de vídeo
+Exec=lingmo-camera
+Icon=camera-web
+NoDisplay=true
