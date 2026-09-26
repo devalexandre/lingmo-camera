@@ -45,7 +45,9 @@ QString Loopback::findDevice(const QString &label)
     const QDir sys("/sys/class/video4linux");
     for (const QString &node : sys.entryList({"video*"}, QDir::Dirs | QDir::System)) {
         QFile name(sys.filePath(node + "/name"));
-        if (name.open(QIODevice::ReadOnly) && QString::fromUtf8(name.readAll()).trimmed() == label)
+        // Stray quotes stay in the name when the module options were quoted per label
+        if (name.open(QIODevice::ReadOnly)
+            && QString::fromUtf8(name.readAll()).trimmed().remove('"') == label)
             return "/dev/" + node;
     }
     return {};
