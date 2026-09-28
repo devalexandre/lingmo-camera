@@ -39,7 +39,10 @@
 #define MODEL_PATH "/usr/share/lingmo-camera/face_detection_yunet_2023mar.onnx"
 #endif
 #ifndef SEGMENTATION_MODEL_PATH
-#define SEGMENTATION_MODEL_PATH "/usr/share/lingmo-camera/human_segmentation_pphumanseg_2023mar.onnx"
+#define SEGMENTATION_MODEL_PATH "/usr/share/lingmo-camera/selfie_segmenter_landscape.tflite"
+#endif
+#ifndef MATTING_MODEL_PATH
+#define MATTING_MODEL_PATH "/usr/share/lingmo-camera/rvm_mobilenetv3_640x360.onnx"
 #endif
 
 Pipeline::Pipeline(QObject *parent)
@@ -110,13 +113,17 @@ QString Pipeline::pickSource() const
 
 void Pipeline::run()
 {
+    // OpenCV's pool otherwise takes every core and keeps them spinning between frames
+    // (about 4 cores busy for the blur); with two, the models still keep up with the camera
+    cv::setNumThreads(2);
     Loopback out;
     Framer framer(MODEL_PATH);
     if (!framer.isValid())
         qWarning() << "face model not loaded from" << MODEL_PATH << "- showing the whole picture";
-    Background background(SEGMENTATION_MODEL_PATH);
+    Background background(SEGMENTATION_MODEL_PATH, MATTING_MODEL_PATH);
     if (!background.isValid())
-        qWarning() << "segmentation model not loaded from" << SEGMENTATION_MODEL_PATH << "- no background blur";
+        qWarning() << "segmentation models not loaded from" << SEGMENTATION_MODEL_PATH << "and"
+                   << MATTING_MODEL_PATH << "- no background blur";
     bool blurring = false;
 
     cv::VideoCapture camera;

@@ -24,7 +24,8 @@ add_executable(lingmo-camera
 set(MODEL_DIR ${CMAKE_INSTALL_FULL_DATADIR}/lingmo-camera)
 target_compile_definitions(lingmo-camera PRIVATE
     MODEL_PATH="${MODEL_DIR}/face_detection_yunet_2023mar.onnx"
-    SEGMENTATION_MODEL_PATH="${MODEL_DIR}/human_segmentation_pphumanseg_2023mar.onnx")
+    SEGMENTATION_MODEL_PATH="${MODEL_DIR}/selfie_segmenter_landscape.tflite"
+    MATTING_MODEL_PATH="${MODEL_DIR}/rvm_mobilenetv3_640x360.onnx")
 target_include_directories(lingmo-camera PRIVATE ${OpenCV_INCLUDE_DIRS})
 target_link_libraries(lingmo-camera PRIVATE Qt6::Core Qt6::DBus ${OpenCV_LIBS})
 
@@ -47,8 +48,10 @@ install(TARGETS lingmo-faceauth RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 install(FILES data/face_detection_yunet_2023mar.onnx DESTINATION ${MODEL_DIR})
 # SFace face recognition for lingmo-faceauth (Apache-2.0, from opencv_zoo)
 install(FILES data/face_recognition_sface_2021dec.onnx DESTINATION ${MODEL_DIR})
-# PP-HumanSeg person segmentation for the background blur (Apache-2.0, from opencv_zoo)
-install(FILES data/human_segmentation_pphumanseg_2023mar.onnx DESTINATION ${MODEL_DIR})
+# Background blur: MediaPipe's selfie segmenter, landscape (Apache-2.0, from Google)
+install(FILES data/selfie_segmenter_landscape.tflite DESTINATION ${MODEL_DIR})
+# and Robust Video Matting, MobileNetV3, fixed to 640x360 for OpenCV (GPL-3.0; tools/rvm-for-opencv.py)
+install(FILES data/rvm_mobilenetv3_640x360.onnx DESTINATION ${MODEL_DIR})
 # Session daemon
 install(FILES data/lingmo-camera.desktop DESTINATION ${CMAKE_INSTALL_FULL_SYSCONFDIR}/xdg/autostart)
 # The virtual camera: loaded at boot, with a second device left for OBS

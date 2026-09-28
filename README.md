@@ -6,8 +6,13 @@ with OpenCV's YuNet detector, moves a smooth 16:9 crop over the picture and writ
 result to a virtual camera, **Lingmo Camera** (v4l2loopback).
 
 - The real camera is only opened while an app streams from Lingmo Camera.
-- Background blur (light or strong), or an image behind you: the people are found with
-  the PP-HumanSeg segmentation model on a separate thread, so the frame rate holds.
+- Background blur (light or strong), or an image behind you. Two small models look at a
+  640x360 copy of the picture on a separate thread, so the frame rate holds: Robust Video
+  Matting draws a soft outline that keeps the hair and the headset, and MediaPipe's selfie
+  segmenter fills the inside (dark clothes on a dark chair). The mask is smoothed over time,
+  the room is blurred with the person taken out (no glow), and with an image the old room's
+  colour is taken out of the soft edge. It costs about 5 ms per frame on the camera thread;
+  the models take ~40-50 ms per run on two threads (masks at ~20 fps on a desktop CPU).
 - Options live in Settings > Camera (framing on/off, zoom, which camera, background), stored in
   `~/.config/lingmoos/camera.conf` and exposed on the session bus as `com.lingmo.Camera`.
 - The v4l2loopback module is set up by `/usr/lib/modprobe.d/lingmo-camera.conf`; a
@@ -18,9 +23,19 @@ Build: `cmake -B build -DCMAKE_INSTALL_PREFIX=/usr && cmake --build build`
 The face model `data/face_detection_yunet_2023mar.onnx` comes from
 [opencv_zoo](https://github.com/opencv/opencv_zoo/tree/main/models/face_detection_yunet) (MIT).
 
-The person segmentation model `data/human_segmentation_pphumanseg_2023mar.onnx` comes from
-[opencv_zoo](https://github.com/opencv/opencv_zoo/tree/main/models/human_segmentation_pphumanseg)
-(Apache-2.0, ported from PaddleSeg's PP-HumanSeg).
+The background models:
+
+- `data/selfie_segmenter_landscape.tflite` is MediaPipe's selfie segmenter, landscape
+  (256x144), from Google
+  ([download](https://storage.googleapis.com/mediapipe-models/image_segmenter/selfie_segmenter_landscape/float16/latest/selfie_segmenter_landscape.tflite),
+  [model card](https://storage.googleapis.com/mediapipe-assets/Model%20Card%20MediaPipe%20Selfie%20Segmentation.pdf),
+  Apache-2.0). OpenCV reads the .tflite as it is.
+- `data/rvm_mobilenetv3_640x360.onnx` is
+  [Robust Video Matting](https://github.com/PeterL1n/RobustVideoMatting) (MobileNetV3,
+  `rvm_mobilenetv3_fp32.onnx` from its v1.0.0 release, GPL-3.0), made runnable by OpenCV with
+  `tools/rvm-for-opencv.py`: fixed 640x360 input and downsample ratio 0.25, simplified, and
+  two OpenCV quirks worked around (ceil-mode average pooling, Tanh on large inputs). The
+  output matches onnxruntime's.
 
 ## Face login: lingmo-faceauth
 
