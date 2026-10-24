@@ -25,6 +25,7 @@
 namespace {
 const QStringList Zooms = {"wide", "medium", "close"};
 const QStringList Strengths = {"light", "strong"};
+const QStringList Shapes = {"none", "circle", "square", "rounded_rect"};
 }
 
 Camera::Camera(QObject *parent)
@@ -65,6 +66,8 @@ void Camera::apply()
     m_pipeline->setBlur(backgroundBlur());
     m_pipeline->setBlurStrength(Background::Strength(Strengths.indexOf(blurStrength())));
     m_pipeline->setBackgroundImage(backgroundImage());
+    m_pipeline->setShapeMask(shapeMask());
+    m_pipeline->setShapeBorder(shapeBorder());
 }
 
 bool Camera::framing() const
@@ -141,6 +144,33 @@ QString Camera::backgroundImage() const
 void Camera::setBackgroundImage(const QString &path)
 {
     m_settings.setValue("BackgroundImage", path);
+    apply();
+    emit Changed();
+}
+
+QString Camera::shapeMask() const
+{
+    const QString value = m_settings.value("ShapeMask", "none").toString();
+    return Shapes.contains(value) ? value : "none";
+}
+
+void Camera::setShapeMask(const QString &shape)
+{
+    if (!Shapes.contains(shape))
+        return;
+    m_settings.setValue("ShapeMask", shape);
+    apply();
+    emit Changed();
+}
+
+bool Camera::shapeBorder() const
+{
+    return m_settings.value("ShapeBorder", false).toBool();
+}
+
+void Camera::setShapeBorder(bool on)
+{
+    m_settings.setValue("ShapeBorder", on);
     apply();
     emit Changed();
 }

@@ -68,6 +68,15 @@ void Pipeline::setBackgroundImage(const QString &path)
     }
 }
 
+void Pipeline::setShapeMask(const QString &shape)
+{
+    QMutexLocker lock(&m_mutex);
+    if (m_shapeMask != shape) {
+        m_shapeMask = shape;
+        m_shapeChanged = true;
+    }
+}
+
 QVector<QPair<QString, QString>> Pipeline::cameras()
 {
     QVector<QPair<QString, QString>> list;
@@ -222,6 +231,34 @@ void Pipeline::run()
             background.reset();
         }
         blurring = m_blur;
+
+        QString currentShapeMask;
+        {
+            QMutexLocker lock(&m_mutex);
+            currentShapeMask = m_shapeMask;
+        }
+        if (currentShapeMask == "circle" || currentShapeMask == "square" || currentShapeMask == "rounded_rect") {
+            cv::Mat mask = cv::Mat::zeros(scaled.size(), scaled.type());
+            cv::Point center(scaled.cols / 2, scaled.rows / 2);
+            int radius = std::min(scaled.cols, scaled.rows) / 2;
+            cv::Rect rect(center.x - radius, center.y - radius, radius * 2, radius * 2);
+
+            if (currentShapeMask == "circle") {
+                cv::circle(mask, center, radius, cv::Scalar(255, 255, 255), -1, cv::LINE_AA);
+                cv::bitwise_and(scaled, mask, scaled);
+                if (m_shapeBorder) {
+                    cv::circle(scaled, center, radius, cv::Scalar(255, 255, 255), 8, cv::LINE_AA);
+                }
+            } else {
+                // Square or rounded_rect fallback
+                cv::rectangle(mask, rect, cv::Scalar(255, 255, 255), -1, cv::LINE_AA);
+                cv::bitwise_and(scaled, mask, scaled);
+                if (m_shapeBorder) {
+                    cv::rectangle(scaled, rect, cv::Scalar(255, 255, 255), 8, cv::LINE_AA);
+                }
+            }
+        }
+
         out.write(scaled);
     }
 

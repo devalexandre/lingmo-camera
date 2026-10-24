@@ -50,6 +50,8 @@ public:
     void setBlurStrength(Background::Strength strength) { m_blurStrength = strength; }
     // Shown behind the people instead of the blur; "" for none
     void setBackgroundImage(const QString &path);
+    void setShapeMask(const QString &shape);
+    void setShapeBorder(bool on) { m_shapeBorder = on; }
 
     void stop() { m_stop = true; }
 
@@ -74,9 +76,12 @@ private:
     std::atomic<bool> m_blur = false;
     std::atomic<Background::Strength> m_blurStrength = Background::Strong;
     std::atomic<bool> m_imageChanged = false;
+    std::atomic<bool> m_shapeBorder = false;
+    std::atomic<bool> m_shapeChanged = false;
     mutable QMutex m_mutex;
     QString m_source;
     QString m_image;
+    QString m_shapeMask;
 };
 
 #endif // PIPELINE_H

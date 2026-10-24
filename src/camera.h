@@ -38,6 +38,8 @@ class Camera : public QObject
     Q_PROPERTY(bool BackgroundBlur READ backgroundBlur WRITE setBackgroundBlur)
     Q_PROPERTY(QString BlurStrength READ blurStrength WRITE setBlurStrength)
     Q_PROPERTY(QString BackgroundImage READ backgroundImage WRITE setBackgroundImage)
+    Q_PROPERTY(QString ShapeMask READ shapeMask WRITE setShapeMask)
+    Q_PROPERTY(bool ShapeBorder READ shapeBorder WRITE setShapeBorder)
     Q_PROPERTY(bool Available READ available)
     Q_PROPERTY(bool Active READ active)
     Q_PROPERTY(QString SourceName READ sourceName)
@@ -62,6 +64,13 @@ public:
     // Image shown behind the people instead of the blur, "" for none
     QString backgroundImage() const;
     void setBackgroundImage(const QString &path);
+
+    // Shape mask ("none", "circle")
+    QString shapeMask() const;
+    void setShapeMask(const QString &shape);
+
+    bool shapeBorder() const;
+    void setShapeBorder(bool on);
 
     // The virtual camera exists (the v4l2loopback module is loaded)
     bool available() const { return m_available; }
